@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>快钱多主体总看板</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; font-family: "Microsoft YaHei", "Segoe UI", sans-serif; }
+  body { display: flex; overflow: hidden; }
+
+  /* ===== 左侧栏 ===== */
+  .sidebar {
+    width: 210px;
+    min-width: 210px;
+    background: #1e293b;
+    color: #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    transition: width 0.2s ease, min-width 0.2s ease;
+    overflow: hidden;
+  }
+  .sidebar-header {
+    padding: 14px 16px;
+    border-bottom: 1px solid #334155;
+    font-size: 15px;
+    font-weight: bold;
+    color: #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .sidebar-header .title-text { flex: 1; min-width: 0; }
+  .sidebar-header .sub { font-size: 12px; color: #94a3b8; font-weight: normal; margin-top: 4px; }
+  .toggle-btn {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    padding: 4px 6px;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+  .toggle-btn:hover { background: #334155; color: #f1f5f9; }
+  .merchant-list {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 8px 0;
+  }
+  .merchant-list::-webkit-scrollbar { width: 6px; }
+  .merchant-list::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+  .merchant-item {
+    padding: 12px 16px;
+    cursor: pointer;
+    border-left: 3px solid transparent;
+    transition: all 0.15s;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+  .merchant-item:hover { background: #334155; }
+  .merchant-item.active {
+    background: #0f172a;
+    border-left-color: #38bdf8;
+    color: #38bdf8;
+  }
+  .merchant-item .name { display: block; font-weight: 600; }
+  .merchant-item .key { display: block; font-size: 11px; color: #64748b; margin-top: 2px; }
+  .merchant-item.active .key { color: #7dd3fc; }
+  .merchant-item .status {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    margin-right: 8px; vertical-align: middle;
+  }
+  .merchant-item .abbr {
+    display: none;
+    font-weight: bold;
+    font-size: 16px;
+    text-align: center;
+  }
+  .status.ok { background: #22c55e; }
+  .status.missing { background: #ef4444; }
+  .sidebar-footer {
+    padding: 12px 16px;
+    border-top: 1px solid #334155;
+    font-size: 11px;
+    color: #64748b;
+    line-height: 1.6;
+    flex-shrink: 0;
+  }
+
+  /* ===== 收起态 ===== */
+  .sidebar.collapsed { width: 52px; min-width: 52px; }
+  .sidebar.collapsed .sidebar-header { padding: 14px 0; justify-content: center; }
+  .sidebar.collapsed .sidebar-header .title-text,
+  .sidebar.collapsed .sidebar-header .sub,
+  .sidebar.collapsed .sidebar-footer { display: none; }
+  .sidebar.collapsed .merchant-item {
+    padding: 12px 0;
+    text-align: center;
+  }
+  .sidebar.collapsed .merchant-item .name,
+  .sidebar.collapsed .merchant-item .key { display: none; }
+  .sidebar.collapsed .merchant-item .status { display: block; margin: 0 auto 4px; }
+  .sidebar.collapsed .merchant-item .abbr { display: block; }
+
+  /* ===== 右侧内容 ===== */
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background: #f8fafc;
+  }
+  .toolbar {
+    padding: 12px 24px;
+    background: #fff;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .toolbar .title { font-size: 16px; font-weight: bold; color: #1e293b; }
+  .toolbar .meta { font-size: 12px; color: #64748b; margin-top: 4px; }
+  .toolbar .actions { display: flex; gap: 10px; align-items: center; }
+  .btn {
+    padding: 6px 16px;
+    background: #38bdf8;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.15s;
+  }
+  .btn:hover { background: #0ea5e9; }
+  .btn.secondary { background: #64748b; }
+  .btn.secondary:hover { background: #475569; }
+  .content {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+  }
+  iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
+  }
+  .fallback {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: #64748b;
+    max-width: 480px;
+  }
+  .fallback .icon { font-size: 48px; margin-bottom: 16px; }
+  .fallback h3 { font-size: 18px; color: #475569; margin-bottom: 8px; }
+  .fallback p { font-size: 13px; line-height: 1.8; }
+  .fallback code { background: #f1f5f9; padding: 2px 6px; border-radius: 3px; font-size: 12px; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="title-text">
+      快钱多主体看板
+      <div class="sub">总览 · 后台数据</div>
+    </div>
+    <button class="toggle-btn" id="toggleBtn" onclick="toggleSidebar()" title="收起侧栏">◀</button>
+  </div>
+  <div class="merchant-list" id="merchantList"></div>
+  <div class="sidebar-footer">
+    提示：新增主体后请运行构建脚本刷新清单。
+  </div>
+</div>
+
+<div class="main">
+  <div class="toolbar">
+    <div>
+      <div class="title" id="title">请选择左侧主体</div>
+      <div class="meta" id="meta"></div>
+    </div>
+    <div class="actions">
+      <button class="btn secondary" id="openBtn" onclick="openCurrent()">新窗口打开</button>
+      <button class="btn" id="refreshBtn" onclick="refreshIframe()">刷新</button>
+    </div>
+  </div>
+  <div class="content">
+    <iframe id="frame" class="hidden"></iframe>
+    <div class="fallback" id="fallback">
+      <div class="icon">📋</div>
+      <h3>请选择左侧主体</h3>
+      <p>点击左侧列表中的主体名称，即可在右侧查看该主体的后台看板。</p>
+    </div>
+  </div>
+</div>
+
+<script>
+/* MERCHANTS_START */
+const merchants = [
+  {
+    "key": "唯瀚",
+    "name": "广州唯瀚科技有限公司",
+    "dashboard": "唯瀚/快钱后台/唯瀚数据看板.html",
+    "exists": true,
+    "mtime": "2026-11-09 09:39"
+  },
+  {
+    "key": "六诺",
+    "name": "广东六诺科技有限公司",
+    "dashboard": "六诺/快钱后台/六诺数据看板.html",
+    "exists": true,
+    "mtime": "2026-11-09 09:39"
+  }
+];
+/* MERCHANTS_END */
+
+const STORAGE_KEY = "kq_overview_last_key";
+let currentKey = null;
+
+function renderSidebar() {
+  const list = document.getElementById("merchantList");
+  list.innerHTML = "";
+  merchants.forEach(m => {
+    const div = document.createElement("div");
+    div.className = "merchant-item";
+    div.dataset.key = m.key;
+    const dot = m.exists ? '<span class="status ok"></span>' : '<span class="status missing"></span>';
+    const abbr = '<span class="abbr">' + (m.key ? m.key.charAt(0) : "?") + '</span>';
+    div.innerHTML = dot + abbr + '<span class="name">' + m.name + '</span><span class="key">' + m.key + '</span>';
+    div.onclick = () => selectMerchant(m.key);
+    list.appendChild(div);
+  });
+}
+
+function selectMerchant(key) {
+  const m = merchants.find(x => x.key === key);
+  if (!m) return;
+  currentKey = key;
+
+  // 高亮侧栏
+  document.querySelectorAll(".merchant-item").forEach(el => {
+    el.classList.toggle("active", el.dataset.key === key);
+  });
+
+  // 更新工具栏
+  document.getElementById("title").textContent = m.name;
+  const metaParts = [];
+  if (m.key) metaParts.push("主体: " + m.key);
+  if (m.mtime) metaParts.push("看板生成: " + m.mtime);
+  else metaParts.push("看板生成: 未知");
+  document.getElementById("meta").textContent = metaParts.join("  ·  ");
+
+  const frame = document.getElementById("frame");
+  const fallback = document.getElementById("fallback");
+
+  if (!m.exists) {
+    frame.classList.add("hidden");
+    fallback.classList.remove("hidden");
+    fallback.innerHTML =
+      '<div class="icon">⚠️</div>' +
+      '<h3>该主体暂无 backend 看板</h3>' +
+      '<p>请先运行后台采集与构建，生成看板文件后再查看。<br>' +
+      '预期路径：<code>' + m.dashboard + '</code></p>';
+    return;
+  }
+
+  // 加载 iframe
+  fallback.classList.add("hidden");
+  frame.classList.remove("hidden");
+  frame.src = m.dashboard;
+
+  // 记忆
+  try { localStorage.setItem(STORAGE_KEY, key); } catch(e) {}
+}
+
+function refreshIframe() {
+  const frame = document.getElementById("frame");
+  if (!frame.classList.contains("hidden") && currentKey) {
+    const m = merchants.find(x => x.key === currentKey);
+    if (m) frame.src = m.dashboard + "?t=" + Date.now();
+  }
+}
+
+function openCurrent() {
+  if (!currentKey) return;
+  const m = merchants.find(x => x.key === currentKey);
+  if (m && m.exists) window.open(m.dashboard, "_blank");
+}
+
+// ===== 侧栏折叠 =====
+const COLLAPSED_KEY = "kq_overview_collapsed";
+function toggleSidebar() {
+  const sb = document.getElementById("sidebar");
+  const btn = document.getElementById("toggleBtn");
+  const collapsed = sb.classList.toggle("collapsed");
+  btn.textContent = collapsed ? "▶" : "◀";
+  btn.title = collapsed ? "展开侧栏" : "收起侧栏";
+  try { localStorage.setItem(COLLAPSED_KEY, collapsed ? "1" : "0"); } catch(e) {}
+}
+
+function applyCollapsedState() {
+  let c = "0";
+  try { c = localStorage.getItem(COLLAPSED_KEY) || "0"; } catch(e) {}
+  const sb = document.getElementById("sidebar");
+  const btn = document.getElementById("toggleBtn");
+  if (c === "1") {
+    sb.classList.add("collapsed");
+    btn.textContent = "▶";
+    btn.title = "展开侧栏";
+  } else {
+    sb.classList.remove("collapsed");
+    btn.textContent = "◀";
+    btn.title = "收起侧栏";
+  }
+}
+
+// 初始化
+renderSidebar();
+applyCollapsedState();
+
+let lastKey = null;
+try { lastKey = localStorage.getItem(STORAGE_KEY); } catch(e) {}
+const initKey = (lastKey && merchants.find(x => x.key === lastKey)) ? lastKey : (merchants[0] ? merchants[0].key : null);
+if (initKey) selectMerchant(initKey);
+</script>
+
+</body>
+</html>
