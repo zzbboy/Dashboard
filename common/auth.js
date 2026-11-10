@@ -89,7 +89,8 @@
 
   function inIframe() { try { return window.self !== window.top; } catch (e) { return false; } }
   function parentAuthed() {
-    try { return inIframe() && window.parent.sessionStorage.getItem("kq_auth_ok") === "1"; }
+    // 读自己的 sessionStorage 即可: HTTP 下同 origin 与 index 共享; file:// 下同 tab 内 Chrome/Edge 也共享
+    try { return inIframe() && sessionStorage.getItem("kq_auth_ok") === "1"; }
     catch (e) { return false; }
   }
 
