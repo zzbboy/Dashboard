@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>快钱余额明细 · 用户真实收支看板</title>
+<link rel="stylesheet" href="../common/style.css">
+<script src="../common/auth.js"></script>
+</head>
+<body>
+
+<div class="fixed-top">
+  <header>
+    <div class="wrap">
+      <div style="flex:1;min-width:0">
+        <h1>快钱余额明细 · 用户真实收支看板</h1>
+        <div class="header-info">广州唯瀚科技有限公司 · 数据截至 <span id="dataEnd">—</span> · 共 <span id="dataCnt">—</span> 条交易</div>
+        <div class="toolbar">
+          <div class="tb-group">
+            <label>快捷</label>
+            <div class="seg" id="segQuick">
+              <button data-r="all" class="on">全部</button>
+              <button data-r="7d">近7天</button>
+              <button data-r="30d">近30天</button>
+              <button data-r="mtd">本月</button>
+            </div>
+          </div>
+          <div class="tb-group">
+            <label>起</label>
+            <select id="selFrom"></select>
+            <label>止</label>
+            <select id="selTo"></select>
+          </div>
+          <div class="tb-group">
+            <label>类别</label>
+            <select id="selClass"><option value="">全部</option>
+              <option value="代收进账_参考收入">代收进账 (汇总结算)</option>
+              <option value="代扣出账_参考支出">代扣出账</option>
+              <option value="充值_支出">充值 (用户支出)</option>
+              <option value="提现_收入">提现 (用户收入)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="status" id="statusBar">—</div>
+    </div>
+  </header>
+  <nav>
+    <div class="wrap">
+      <a href="#flow" class="on">① 资金流</a>
+      <a href="#overview">② 核心KPI</a>
+      <a href="#trend">③ 每日趋势</a>
+      <a href="#negPrice">④ 代扣价格分布</a>
+      <a href="#month">⑤ 月度汇总</a>
+      <a href="#compare">⑥ 投入vs收回</a>
+      <a href="#insight">⑦ 数据洞察</a>
+      <a href="#detail">⑧ 明细</a>
+    </div>
+  </nav>
+</div>
+
+<main>
+<div class="wrap">
+
+<!-- ========== ① 资金流图 (双公式) ========== -->
+<section id="flow">
+  <div class="sec-title"><span class="dot"></span><h2>① 资金流 (双公式)</h2>
+    <span class="note">公式1 用户拿钱视角：投入→收回；公式2 纯粹平台资金视角：代收是来源，代扣是平台内扣，充值是用户垫的</span></div>
+  <div class="card pad" style="padding:18px">
+    <div id="flowBox1"></div>
+    <div style="border-top:1px dashed #e6eaf2;margin:16px 0"></div>
+    <div id="flowBox2"></div>
+  </div>
+</section>
+
+<!-- ========== ② 核心 KPI ========== -->
+<section id="overview">
+  <div class="sec-title"><span class="dot"></span><h2>② 核心 KPI</h2>
+    <span class="note">用户视角：投入(充值) vs 收回(提现+余额) · 代收进账/代扣出账 = 平台内部流水 (已体现在余额里)</span></div>
+  <div class="grid g7">
+    <div class="card kpi c6"><div class="bar"></div>
+      <div class="k">代收进账（汇总结算）</div><div class="v" id="kInAmt">—</div><div class="d">元 · <span id="kInCnt">0</span> 笔</div></div>
+    <div class="card kpi c7"><div class="bar"></div>
+      <div class="k">代扣出账</div><div class="v" id="kOutAmt">—</div><div class="d">元 · <span id="kOutCnt">0</span> 笔</div></div>
+    <div class="card kpi c1"><div class="bar"></div>
+      <div class="k">投入 (充值总额)</div><div class="v neg" id="kIn">—</div><div class="d">元 · 用户支出</div></div>
+    <div class="card kpi c2"><div class="bar"></div>
+      <div class="k">收回 (提现总额)</div><div class="v pos" id="kOut">—</div><div class="d">元 · 用户收入</div></div>
+    <div class="card kpi c3"><div class="bar"></div>
+      <div class="k">期末余额 (未提现)</div><div class="v pos" id="kBal">—</div><div class="d">元 · 平台里</div></div>
+    <div class="card kpi c4"><div class="bar"></div>
+      <div class="k">收回合计</div><div class="v pos" id="kTotal">—</div><div class="d">提现 + 余额</div></div>
+    <div class="card kpi c5"><div class="bar"></div>
+      <div class="k">净收益</div><div class="v" id="kNet">—</div><div class="d">收回 − 投入</div></div>
+  </div>
+</section>
+
+<!-- ========== ③ 每日趋势 ========== -->
+<section id="trend">
+  <div class="sec-title"><span class="dot"></span><h2>③ 每日趋势</h2>
+    <span class="note">绿=代收进账 · 橙=代扣出账 · 蓝=提现 · 红=充值 · 紫折线=当日末余额</span></div>
+  <div class="card"><div id="chartTrend" class="chart tall"></div></div>
+</section>
+
+<!-- ========== ④ 代扣价格分布 ========== -->
+<section id="negPrice">
+  <div class="sec-title"><span class="dot"></span><h2>④ 代扣出账 · 按价格分布</h2>
+    <span class="note">每天每个价格档位（±5元）的代扣笔数，看哪些金额档位最常出现</span></div>
+  <div class="card"><div id="chartNegPrice" class="chart tall"></div></div>
+</section>
+
+<!-- ========== ⑤ 月度汇总 (全量, 不受筛选影响) ========== -->
+<section id="month">
+  <div class="sec-title"><span class="dot"></span><h2>⑤ 月度对比 <span style="font-size:11px;color:#8a95ad">(全量数据)</span></h2>
+    <span class="note">按月 · 代收进账 vs 代扣出账 vs 充值 vs 提现 + 月末余额。本板块始终展示全量数据。</span></div>
+  <div class="card"><div id="chartMonth" class="chart"></div></div>
+</section>
+
+<!-- ========== ⑥ 投入vs收回 (全量, 不受筛选影响) ========== -->
+<section id="compare">
+  <div class="sec-title"><span class="dot"></span><h2>⑥ 投入 vs 收回 vs 净收益 <span style="font-size:11px;color:#8a95ad">(全量数据)</span></h2>
+    <span class="note">堆叠柱 = 平台内部资金流（代收/代扣/充值/提现）；折线 = 净收益（代收 − 充值 − 代扣）。本板块始终展示全量数据。</span></div>
+  <div class="card"><div id="chartCompare" class="chart"></div></div>
+</section>
+
+<!-- ========== ⑦ 数据洞察 ========== -->
+<section id="insight">
+  <div class="sec-title"><span class="dot"></span><h2>⑦ 数据洞察 & 发现</h2>
+    <span class="note">基于当前筛选范围自动生成，按 OK / 信息 / 警告 / 错误 四级标记</span></div>
+  <div id="insightBox"></div>
+</section>
+
+<!-- ========== ⑧ 明细表 ========== -->
+<section id="detail">
+  <div class="sec-title"><span class="dot"></span><h2>⑧ 交易明细</h2>
+    <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+      <span style="font-size:12px;color:#6b7690">每页</span>
+      <select id="pageSize" style="padding:3px 6px;border:1px solid #d0d8e8;border-radius:4px;font-size:12px">
+        <option value="10">10</option><option value="20" selected>20</option><option value="30">30</option>
+        <option value="40">40</option><option value="50">50</option><option value="60">60</option>
+        <option value="70">70</option><option value="80">80</option><option value="90">90</option>
+      </select>
+      <span style="font-size:12px;color:#6b7690">行</span>
+    </div>
+    <div class="search" style="margin-top:8px"><input id="searchBox" placeholder="搜索交易号 / 对方 / 订单号..."></div></div>
+  <div class="card">
+    <div class="tbl-wrap">
+      <table id="tblDetail">
+        <thead><tr>
+          <th>日期</th><th>类型</th><th>交易对方</th><th>订单号</th><th>交易号</th>
+          <th>平台收入列</th><th>平台支出列</th><th>用户视角金额</th><th>类别</th><th>余额</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div id="pageBar" style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;font-size:13px;color:#6b7690"></div>
+  </div>
+</section>
+
+<footer>快钱余额明细看板 · 用户视角 v2 · 离线可用</footer>
+
+</div>
+</main>
+
+<script src="../common/echarts.min.js"></script>
+<script src="../common/data-weihan-kq.js?v=db2da9e5dd99"></script>
+<script src="../common/dashboard-kq.js"></script>
+</body>
+</html>

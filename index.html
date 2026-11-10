@@ -165,6 +165,7 @@
   .fallback code { background: #f1f5f9; padding: 2px 6px; border-radius: 3px; font-size: 12px; }
   .hidden { display: none !important; }
 </style>
+<script src="common/auth.js"></script>
 </head>
 <body>
 
@@ -209,14 +210,16 @@ const merchants = [
   {
     "key": "唯瀚",
     "name": "广州唯瀚科技有限公司",
-    "dashboard": "唯瀚/快钱后台/唯瀚数据看板.html",
+    "slug": "weihan",
+    "dashboard": "weihan/backend-dashboard.html",
     "exists": true,
     "mtime": "2026-11-09 09:39"
   },
   {
     "key": "六诺",
     "name": "广东六诺科技有限公司",
-    "dashboard": "六诺/快钱后台/六诺数据看板.html",
+    "slug": "liunuo",
+    "dashboard": "liunuo/backend-dashboard.html",
     "exists": true,
     "mtime": "2026-11-09 09:39"
   }
@@ -286,7 +289,7 @@ function refreshIframe() {
   const frame = document.getElementById("frame");
   if (!frame.classList.contains("hidden") && currentKey) {
     const m = merchants.find(x => x.key === currentKey);
-    if (m) frame.src = m.dashboard + "?t=" + Date.now();
+    if (m) frame.src = m.dashboard + (m.dashboard.indexOf("?") >= 0 ? "&" : "?") + "t=" + Date.now();
   }
 }
 
@@ -324,13 +327,16 @@ function applyCollapsedState() {
 }
 
 // 初始化
-renderSidebar();
-applyCollapsedState();
-
-let lastKey = null;
-try { lastKey = localStorage.getItem(STORAGE_KEY); } catch(e) {}
-const initKey = (lastKey && merchants.find(x => x.key === lastKey)) ? lastKey : (merchants[0] ? merchants[0].key : null);
-if (initKey) selectMerchant(initKey);
+function __kqInitIndex(){
+  renderSidebar();
+  applyCollapsedState();
+  let lastKey = null;
+  try { lastKey = localStorage.getItem(STORAGE_KEY); } catch(e) {}
+  const initKey = (lastKey && merchants.find(x => x.key === lastKey)) ? lastKey : (merchants[0] ? merchants[0].key : null);
+  if (initKey) selectMerchant(initKey);
+}
+if (window.__kq_authed) __kqInitIndex();
+else window.addEventListener('kq:auth-ok', __kqInitIndex, { once: true });
 </script>
 
 </body>
